@@ -22,7 +22,7 @@ with Session(engine) as session:
             user = User(username=username)
             session.add(user)
             session.commit()
-            print(f"{Green}New user {Reset}{Magenta}{username}{Reset}{Green} has been created! Welcome!{Reset}1")
+            print(f"{Green}New user {Reset}{Magenta}{username}{Reset}{Green} has been created! Welcome!{Reset}")
         else:
             print(f"{Blue}Welcome back, {Magenta}{username.upper()}{Reset}{Blue}!{Reset}")
         return user
@@ -62,7 +62,7 @@ with Session(engine) as session:
                 clues = session.query(Clue).filter_by(puzzle_id=selected_user_puzzle.puzzle_id).all()
                 print(f"\n{Red}Clues:{Reset}")
                 for clue in clues:
-                    print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
+                    print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text} {Green}({len(clue.answer)} letter word){Reset}")
 
                 # Retrieve cells for the selected puzzle
                 cells = session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).all()
@@ -111,6 +111,7 @@ with Session(engine) as session:
                                         session.add(cell)
                                 session.commit()
                                 print(f"{Green}Crossword updated successfully!{Reset}")
+                                display_grid(current_puzzle, selected_user_puzzle)
                                 
                             
                             else:
@@ -159,7 +160,7 @@ with Session(engine) as session:
 
         print("Available Puzzles:")
         for puzzle in puzzles:
-            print(f"- {Magenta}{puzzle.name}{Reset}")
+            print(f"{Blue}- {Magenta}{puzzle.name}{Reset}")
 
         puzzle_name = input(f"{Green}Enter the puzzle name: {Magenta}")
         puzzle = session.query(Puzzle).filter(Puzzle.name == puzzle_name).first()
@@ -241,10 +242,32 @@ with Session(engine) as session:
             down_index = 0
 
             for cell in cells:
-                
                 filled_cells.setdefault(cell.row, {})
                 filled_cells[cell.row][cell.column] = str(cell.value)
-
+            obj_tst = {}
+            key = 0
+            for row in range(5):
+                value = 0
+                for column in range(5):
+                    value += 1
+                    if filled_cells[row+1][column+1] != " ":
+                        if value in obj_tst.values():
+                            
+                            break
+                        key += 1
+                        if key <= 5:
+                            obj_tst[key] = value
+                            
+               
+           
+                
+            # {
+            #     1: 3,
+            #     2: 4,
+            #     3: 5,
+            #     4: 2,
+            #     5: 1
+            # }
             for clue in clues:
                 correct = True
                 if clue.direction == 'Across':
@@ -260,7 +283,7 @@ with Session(engine) as session:
                             correct = False
                 elif clue.direction == 'Down':
                     down_index += 1
-                    column = [filled_cells.get(row, {}).get(down_index, ' ') for row in range(1, 6)]
+                    column = [filled_cells.get(row, {}).get(obj_tst[down_index], ' ') for row in range(1, 6)]
                     word = ''.join(column).strip()
                     
                     
@@ -268,9 +291,9 @@ with Session(engine) as session:
                         correct = False
 
                 if correct:
-                    print(f'{Green}{clue.number} {clue.direction}: Correct{Reset}')
+                    print(f'{Magenta}{clue.number} {clue.direction}: {Green}Correct{Reset}')
                 else:
-                    print(f'{Red}{clue.number} {clue.direction}: Incorrect{Reset}')
+                    print(f'{Magenta}{clue.number} {clue.direction}: {Red}Incorrect{Reset}')
 
         else:
             print("No puzzle selected. Please select a puzzle.")
