@@ -27,6 +27,7 @@ with Session(engine) as session:
             print(f"Welcome back, {username}!")
         return user
 
+
     def display_user_puzzles(user, username):
         user_puzzles = session.query(User_puzzles).filter_by(user_id=user.id).all()
 
@@ -59,7 +60,7 @@ with Session(engine) as session:
                 clues = session.query(Clue).filter_by(puzzle_id=selected_user_puzzle.puzzle_id).all()
                 print("\nClues:")
                 for clue in clues:
-                    print(f"{clue.number} {clue.direction}: {clue.text}")
+                    print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
 
                 # Retrieve cells for the selected puzzle
                 cells = session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).all()
@@ -74,7 +75,7 @@ with Session(engine) as session:
                             grid[cell.row - 1][cell.column - 1] = f'[ {cell.value.upper()} ]'
 
                 # Print the crossword grid
-                print("\nCrossword Grid:")
+                print(f"\n{Magenta}Crossword:{Reset}")
                 for row in grid:
                     for cell_value in row:
                         print(cell_value, end='\t')
@@ -107,8 +108,9 @@ with Session(engine) as session:
                                         session.add(cell)
                                 session.commit()
                                 print("Crossword updated successfully!")
-                                
-
+                                print("\nUpdated Crossword Grid:")
+                                display_grid(current_puzzle, selected_user_puzzle)
+                            
                             else:
                                 print("Invalid row or word length. Please try again.")
 
@@ -127,15 +129,13 @@ with Session(engine) as session:
                                 session.commit()
                                 print("Crossword updated successfully!")
                                 print("\nUpdated Crossword Grid:")
-                                for row in grid:
-                                    for cell_value in row:
-                                        print(cell_value, end='\t')
-                                    print()
+                                display_grid(current_puzzle, selected_user_puzzle)
                             else:
                                 print("Invalid column or word length. Please try again.")
 
+
                     elif choice == '2':
-                        check_answers(current_puzzle)
+                        check_answers(current_puzzle, selected_user_puzzle)
 
                     elif choice == '3':
                         session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).delete()
@@ -155,7 +155,7 @@ with Session(engine) as session:
     def create_new_puzzle(user):
         puzzles = session.query(Puzzle).all()
 
-        print("Possible Puzzles:")
+        print("Available Puzzles:")
         for puzzle in puzzles:
             print(f"- {puzzle.name}")
 
@@ -166,8 +166,8 @@ with Session(engine) as session:
             user_puzzle = User_puzzles(user_id=user.id, puzzle_id=puzzle.id)
             session.add(user_puzzle)
             session.commit()
-            print(f"Puzzle '{puzzle_name}' started.")
-            print(puzzle.clues)
+            print(f"Puzzle '{puzzle_name}' created.")
+            
 
             
             rows = 5
@@ -185,16 +185,26 @@ with Session(engine) as session:
             print("Invalid puzzle name. Please try again.")
 
 
-    def display_grid():
+    def display_grid(current_puzzle, selected_user_puzzle):
+        print(f'current puzzle: {current_puzzle}')
         if current_puzzle:
-            cells = session.query(Cell).filter_by(puzzle_id=current_puzzle.id).all()
+            
+            # cells = session.query(Cell).filter_by(puzzle_id=current_puzzle.id).all()
+            cells = session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).all()
             clues = session.query(Clue).filter_by(puzzle_id=current_puzzle.id).all()
 
-            grid = [[' ' for _ in range(5)] for _ in range(5)]
+
+            print("\nClues:")
+            for clue in clues:
+                print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
+            print(f"Selected Crossword: {current_puzzle.name}")
+
+            grid = [['[  ]' for _ in range(5)] for _ in range(5)]
 
             for cell in cells:
                 if 1 <= cell.row <= 5 and 1 <= cell.column <= 5:
-                    grid[cell.row - 1][cell.column - 1] = cell.value.upper()
+                    if cell.value is not None:
+                        grid[cell.row - 1][cell.column - 1] = f'[ {cell.value.upper()} ]'
 
             print("Crossword Grid:")
             for row in grid:
@@ -202,10 +212,6 @@ with Session(engine) as session:
                     print(cell_value, end='\t')
                 print()
 
-            print("\nClues:")
-            for clue in clues:
-                print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
-            print(f"Selected Crossword: {current_puzzle.name}")
         else:
             print("No crossword selected. Please select a crossword.")
 
@@ -220,38 +226,54 @@ with Session(engine) as session:
             print(f"Puzzle '{puzzle_name}' not found for user '{user.username}'.")
 
 
-    def check_answers(current_puzzle):
+    def check_answers(current_puzzle, selected_user_puzzle):
         if current_puzzle:
             clues = session.query(Clue).filter_by(puzzle_id=current_puzzle.id).all()
-            cells = session.query(Cell).join(User_puzzles).filter(User_puzzles.puzzle_id == current_puzzle.id).all()
+            cells = session.query(Cell).join(User_puzzles).filter(User_puzzles.id == selected_user_puzzle.id).all()
             filled_cells = {}
-
             print("\n--- Checking Answers ---")
 
+            across_index = 0
+
+
+            down_index = 0
+
             for cell in cells:
-                filled_cells.setdefault(cell.row, [' ' for _ in range(5)])
-                filled_cells[cell.row][cell.column - 1] = str(cell.value)
+                
+                filled_cells.setdefault(cell.row, {})
+                filled_cells[cell.row][cell.column] = str(cell.value)
 
             for clue in clues:
                 correct = True
                 if clue.direction == 'Across':
-                    row = filled_cells.get(clue.number)
+                    across_index += 1
+                    
+                    row = filled_cells.get(across_index)
+                    
                     if row:
-                        word = ''.join(row)
-                        if word.lower() != clue.answer.lower():
+                        word = ''.join([row.get(column, ' ') for column in range(1, 6)]).strip()
+                        
+                        
+                        if word.lower() != clue.answer.lower() or not word:
                             correct = False
                 elif clue.direction == 'Down':
-                    column = [filled_cells.get(i, [' '])[clue.number - 1] for i in range(1, 6)]
-                    word = ''.join(column)
-                    if word.lower() != clue.answer.lower():
+                    down_index += 1
+                    column = [filled_cells.get(row, {}).get(down_index, ' ') for row in range(1, 6)]
+                    word = ''.join(column).strip()
+                    
+                    
+                    if word.lower() != clue.answer.lower() or not word:
                         correct = False
 
                 if correct:
                     print(f'{Green}{clue.number} {clue.direction}: Correct{Reset}')
                 else:
                     print(f'{Red}{clue.number} {clue.direction}: Incorrect{Reset}')
+
         else:
             print("No puzzle selected. Please select a puzzle.")
+
+
 
 
 

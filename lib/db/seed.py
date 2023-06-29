@@ -20,7 +20,7 @@ session.query(Puzzle).delete()
 Base.metadata.create_all(engine)
 
 puzzle_one = Puzzle(name = "puzzle1")
-# puzzle_two = Puzzle(name= "puzzle2")
+puzzle_two = Puzzle(name= "puzzle2")
 # puzzle_three = Puzzle(name= "puzzle3")
 
 
@@ -34,11 +34,32 @@ clues = [
     {"puzzle_id": 1, "number": 2, "direction": "Down", "text": "Colorful parrot", "answer": "MACAW"},
     {"puzzle_id": 1, "number": 3, "direction": "Down", "text": "Once upon _____", "answer": "ATIME"},
     {"puzzle_id": 1, "number": 4, "direction": "Down", "text": "They go from point A to point B", "answer": "LINES"},
-    {"puzzle_id": 1, "number": 5, "direction": "Down", "text": "Fireplace fodder", "answer": "LOGS"}
+    {"puzzle_id": 1, "number": 5, "direction": "Down", "text": "Fireplace fodder", "answer": "LOGS"},
+    {"puzzle_id": 2, "number": 1, "direction": "Across", "text": "Tai ___", "answer": "CHI"},
+    {"puzzle_id": 2, "number": 4, "direction": "Across", "text": "A question of time", "answer": "WHEN"},
+    {"puzzle_id": 2, "number": 5, "direction": "Across", "text": "With 6-Across, morning meal", "answer": "BREAK"},
+    {"puzzle_id": 2, "number": 6, "direction": "Across", "text": "With 5-Across, basketball play", "answer": "FAST"},
+    {"puzzle_id": 2, "number": 7, "direction": "Across", "text": "Device that may direct you somewhere", "answer": "GPS"},
+    {"puzzle_id": 2, "number": 1, "direction": "Down", "text": "Game that can begin 1. e4 e5", "answer": "CHESS"},
+    {"puzzle_id": 2, "number": 2, "direction": "Down", "text": "Spiciness", "answer": "HEAT"},
+    {"puzzle_id": 2, "number": 3, "direction": "Down", "text": "Squid squirt", "answer": "INK"},
+    {"puzzle_id": 2, "number": 4, "direction": "Down", "text": "Conclude filming", "answer": "WRAP"},  
+    {"puzzle_id": 2, "number": 5, "direction": "Down", "text": "Roald Dahl book, The ___", "answer": "BFG"},
+    {"puzzle_id": 3, "number": 1, "direction": "Across", "text": "", "answer": ""},
+    {"puzzle_id": 3, "number": 6, "direction": "Across", "text": "", "answer": ""},
+    {"puzzle_id": 3, "number": 7, "direction": "Across", "text": "", "answer": ""},
+    {"puzzle_id": 3, "number": 8, "direction": "Across", "text": "With 5-Across, basketball play", "answer": ""},
+    {"puzzle_id": 3, "number": 9, "direction": "Across", "text": "Device that may direct you somewhere", "answer": ""},
+    {"puzzle_id": 3, "number": 1, "direction": "Down", "text": "Game that can begin 1. e4 e5", "answer": ""},
+    {"puzzle_id": 3, "number": 2, "direction": "Down", "text": "Spiciness", "answer": ""},
+    {"puzzle_id": 3, "number": 3, "direction": "Down", "text": "Squid squirt", "answer": ""},
+    {"puzzle_id": 3, "number": 4, "direction": "Down", "text": "Conclude filming", "answer": ""},  
+    {"puzzle_id": 3, "number": 5, "direction": "Down", "text": "Roald Dahl book, The ___", "answer": ""},
 ]
 
-
 session.add(puzzle_one)
+session.add(puzzle_two)
+
 
 for clue_data in clues:
     clue = Clue(**clue_data)
