@@ -16,15 +16,15 @@ with Session(engine) as session:
 
     def login_user():
         global username
-        username = input("Enter your username: ")
+        username = input(f"{Green}Enter your username:{Magenta} ")
         user = session.query(User).filter_by(username=username).first()
         if not user:
             user = User(username=username)
             session.add(user)
             session.commit()
-            print(f"New user {username} has been created! Welcome!")
+            print(f"{Green}New user {Reset}{Magenta}{username}{Reset}{Green} has been created! Welcome!{Reset}1")
         else:
-            print(f"Welcome back, {username}!")
+            print(f"{Blue}Welcome back, {Magenta}{username.upper()}{Reset}{Blue}!{Reset}")
         return user
 
 
@@ -32,33 +32,35 @@ with Session(engine) as session:
         user_puzzles = session.query(User_puzzles).filter_by(user_id=user.id).all()
 
         if not user_puzzles:
-            print(f"No puzzles found for user: {username}!")
-            print("Start a new puzzle?")
-            decision = input("Yes or No? Y/N: ")
+            print(f"{Red}No puzzles found for user: {username}!{Reset}")
+            print(f"{Blue}Start a new puzzle?{Reset}")
+            decision = input(f"{Green}Yes{Reset}{Blue} or{Reset}{Red} No{Reset}{Blue}?{Reset}{Green} Y{Reset}{Blue}/{Reset}{Red}N{Reset}{Blue}:{Magenta} ")
             if decision == 'Y':
                 create_new_puzzle(user)
         else:
-            print("Puzzles:")
+            print(f"{Blue}Puzzles:{Reset}")
             for user_puzzle in user_puzzles:
                 puzzle = session.query(Puzzle).filter_by(id=user_puzzle.puzzle_id).first()
-                print(f"- {puzzle.name}")
+                print(f"{Blue}- {Magenta}{puzzle.name}{Blue}: {Red}ID: {Magenta}{user_puzzle.id}{Reset}")
 
-            puzzle_name = input("Enter the puzzle name to select: ")
+            puzzle_name = input(f"{Green}Enter the puzzle name OR ID to select:{Magenta} ")
             selected_user_puzzle = (
+
                 session.query(User_puzzles)
                 .join(Puzzle)
-                .filter(User_puzzles.user_id == user.id, Puzzle.name == puzzle_name)
+                .filter(User_puzzles.user_id == user.id, User_puzzles.id== puzzle_name)
+            
                 .first()
             )
-
+            
             if selected_user_puzzle:
                 selected_puzzle = session.query(Puzzle).filter_by(id=selected_user_puzzle.puzzle_id).first()
                 current_puzzle = selected_puzzle
-                print(f"\nSelected Puzzle: {selected_puzzle.name}")
+                print(f"\n{Red}Selected Puzzle: {selected_puzzle.name}{Reset}")
 
                 # Retrieve clues for the selected puzzle
                 clues = session.query(Clue).filter_by(puzzle_id=selected_user_puzzle.puzzle_id).all()
-                print("\nClues:")
+                print(f"\n{Red}Clues:{Reset}")
                 for clue in clues:
                     print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
 
@@ -66,37 +68,38 @@ with Session(engine) as session:
                 cells = session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).all()
 
                 # Create the grid
-                grid = [['[   ] ' for _ in range(5)] for _ in range(5)]
+                grid = [[f'{Cyan}[   ]{Reset} ' for _ in range(5)] for _ in range(5)]
 
                 # Fill in the grid with cell values
                 for cell in cells:
                     if cell.row <= 5 and cell.column <= 5:
                         if cell.value is not None:
-                            grid[cell.row - 1][cell.column - 1] = f'[ {cell.value.upper()} ]'
+                            grid[cell.row - 1][cell.column - 1] = f'{Cyan}[{Magenta} {cell.value.upper()}{Cyan} ]{Reset}'
 
                 # Print the crossword grid
-                print(f"\n{Magenta}Crossword:{Reset}")
+                print(f"\n{Red}Your Puzzle:{Reset}")
                 for row in grid:
                     for cell_value in row:
                         print(cell_value, end='\t')
                     print()
 
                 while True:
-                    print("\n1. Edit Crossword")
+                    print(f"\n{Blue}1. Edit Crossword")
                     print("2. Check Answers")
                     print("3. Delete Crossword from user")
                     print("4. Quit")
-                    choice = input("Select an option (1-4): ")
+                    choice = input(f"{Green}Select an option (1-4):{Magenta} ")
 
                     if choice == '1':
-                        print("\n--- Select how you would like to edit ---")
-                        print("1. By row")
+                        display_grid(current_puzzle, selected_user_puzzle)
+                        print(f"\n{Blue}---{Green} Select how you would like to edit{Blue} ---")
+                        print(f"1. By row")
                         print("2. By column")
                         print("3. Quit")
-                        edit_choice = input("Select an option (1-3): ")
+                        edit_choice = input(f"{Green}Select an option (1-3):{Magenta} ")
                         if edit_choice == '1':
-                            row = int(input("Enter the row to edit: "))
-                            word = input("Enter your word: ")
+                            row = int(input(f"{Green}Enter the row to edit:{Magenta} "))
+                            word = input(f"{Green}Enter your word:{Magenta} ")
 
                             if 1 <= row <= 5 and len(word) <= 5:
                                 for i, letter in enumerate(word):
@@ -107,16 +110,15 @@ with Session(engine) as session:
                                         cell = Cell(users_puzzles_id=selected_user_puzzle.id, row=row, column=i + 1, value=letter)
                                         session.add(cell)
                                 session.commit()
-                                print("Crossword updated successfully!")
-                                print("\nUpdated Crossword Grid:")
-                                display_grid(current_puzzle, selected_user_puzzle)
+                                print(f"{Green}Crossword updated successfully!{Reset}")
+                                
                             
                             else:
-                                print("Invalid row or word length. Please try again.")
+                                print(f"{Red}Invalid row or word length. Please try again.{Reset}")
 
                         elif edit_choice == '2':
-                            column = int(input("Enter the column to edit: "))
-                            word = input("Enter your word: ")
+                            column = int(input(f"{Green}Enter the column to edit: {Magenta}"))
+                            word = input(f"{Green}Enter your word: {Magenta}")
 
                             if 1 <= column <= 5 and len(word) <= 5:
                                 for i, letter in enumerate(word):
@@ -127,11 +129,11 @@ with Session(engine) as session:
                                         cell = Cell(users_puzzles_id=selected_user_puzzle.id, row=i + 1, column=column, value=letter)
                                         session.add(cell)
                                 session.commit()
-                                print("Crossword updated successfully!")
-                                print("\nUpdated Crossword Grid:")
+                                print(f"{Green}Crossword updated successfully!{Reset}")
+                                print(f"\n{Red}Updated Puzzle:{Reset}")
                                 display_grid(current_puzzle, selected_user_puzzle)
                             else:
-                                print("Invalid column or word length. Please try again.")
+                                print(f"{Red}Invalid column or word length. Please try again.{Reset}")
 
 
                     elif choice == '2':
@@ -141,14 +143,14 @@ with Session(engine) as session:
                         session.query(Cell).filter_by(users_puzzles_id=selected_user_puzzle.id).delete()
                         session.query(User_puzzles).filter_by(id=selected_user_puzzle.id).delete()
                         session.commit()
-                        print("Crossword deleted successfully!")
+                        print(f"{Green}Crossword {Red}deleted {Green}successfully!{Reset}")
                         break
 
                     elif choice == '4':
                         break
 
             else:
-                print("Invalid puzzle name. Please try again.")
+                print(f"{Red}Invalid puzzle name. Please try again.{Reset}")
 
 
 
@@ -157,16 +159,16 @@ with Session(engine) as session:
 
         print("Available Puzzles:")
         for puzzle in puzzles:
-            print(f"- {puzzle.name}")
+            print(f"- {Magenta}{puzzle.name}{Reset}")
 
-        puzzle_name = input("Enter the puzzle name: ")
+        puzzle_name = input(f"{Green}Enter the puzzle name: {Magenta}")
         puzzle = session.query(Puzzle).filter(Puzzle.name == puzzle_name).first()
 
         if puzzle:
             user_puzzle = User_puzzles(user_id=user.id, puzzle_id=puzzle.id)
             session.add(user_puzzle)
             session.commit()
-            print(f"Puzzle '{puzzle_name}' created.")
+            print(f"{Blue}Puzzle '{Magenta}{puzzle_name}{Blue}' created.{Reset}")
             
 
             
@@ -182,11 +184,11 @@ with Session(engine) as session:
             current_puzzle = puzzle  
 
         else:
-            print("Invalid puzzle name. Please try again.")
+            print(f"{Red}Invalid puzzle name. Please try again.")
 
 
     def display_grid(current_puzzle, selected_user_puzzle):
-        print(f'current puzzle: {current_puzzle}')
+        
         if current_puzzle:
             
             # cells = session.query(Cell).filter_by(puzzle_id=current_puzzle.id).all()
@@ -194,36 +196,36 @@ with Session(engine) as session:
             clues = session.query(Clue).filter_by(puzzle_id=current_puzzle.id).all()
 
 
-            print("\nClues:")
+            print(f"\n{Red}Clues:{Reset}")
             for clue in clues:
                 print(f"{Magenta}{clue.number} {clue.direction}: {Cyan}{clue.text}{Reset}")
-            print(f"Selected Crossword: {current_puzzle.name}")
+            # print(f"{Blue}Selected Crossword: {Magenta}{current_puzzle.name}{Reset}")
 
-            grid = [['[  ]' for _ in range(5)] for _ in range(5)]
+            grid = [[f'{Cyan}[   ]{Reset} ' for _ in range(5)] for _ in range(5)]
 
             for cell in cells:
                 if 1 <= cell.row <= 5 and 1 <= cell.column <= 5:
                     if cell.value is not None:
-                        grid[cell.row - 1][cell.column - 1] = f'[ {cell.value.upper()} ]'
+                        grid[cell.row - 1][cell.column - 1] = f'{Cyan}[{Magenta} {cell.value.upper()}{Cyan} ]{Reset}'
 
-            print("Crossword Grid:")
+            print(f"{Red}Your Puzzle:{Reset}")
             for row in grid:
                 for cell_value in row:
                     print(cell_value, end='\t')
                 print()
 
         else:
-            print("No crossword selected. Please select a crossword.")
+            print(f"{Red}No crossword selected. Please select a crossword.")
 
     def delete_puzzle(user):
-        puzzle_name = input("Enter the name of the puzzle to delete: ")
+        puzzle_name = input(f"{Green}Enter the name of the puzzle to delete: {Magenta}{Reset}")
         user_puzzle = session.query(User_puzzles).join(Puzzle).filter(User_puzzles.user_id == user.id, Puzzle.name == puzzle_name).first()
         if user_puzzle:
             session.delete(user_puzzle)
             session.commit()
-            print(f"Puzzle '{puzzle_name}' has been deleted.")
+            print(f"{Green}Puzzle '{Magenta}{puzzle_name}{Green}' has been {Red}deleted{Green}.{Reset}")
         else:
-            print(f"Puzzle '{puzzle_name}' not found for user '{user.username}'.")
+            print(f"{Red}Puzzle '{Magenta}{puzzle_name}{Red}' not found for user '{Magenta}{user.username}{Red}'.{Reset}")
 
 
     def check_answers(current_puzzle, selected_user_puzzle):
@@ -282,14 +284,14 @@ with Session(engine) as session:
         user = login_user()
         current_puzzle = None
         while True:
-            print(f'''╔═╗╦═╗╔═╗╔═╗╔═╗╦ ╦╔═╗╦═╗╔╦╗
-║  ╠╦╝║ ║╚═╗╚═╗║║║║ ║╠╦╝ ║║
-╚═╝╩╚═╚═╝╚═╝╚═╝╚╩╝╚═╝╩╚══╩╝''')
-            print(f'---------------------------')
-            print("\n1. Start a new puzzle")
-            print("2. Load a puzzle")
-            print("3. Quit")
-            choice = input("Select an option (1-3): ")
+            print(f'''{Green}╔═╗╦═╗╔═╗╔═╗╔═╗{Cyan}╦ ╦╔═╗╦═╗╔╦╗{Green}
+║  ╠╦╝║ ║╚═╗╚═╗{Cyan}║║║║ ║╠╦╝ ║║{Green}
+╚═╝╩╚═╚═╝╚═╝╚═╝{Cyan}╚╩╝╚═╝╩╚══╩╝{Reset}''')
+            print(f'{Blue}---------------------------')
+            print(f"\n1. Start a new puzzle")
+            print(f"2. Load a puzzle")
+            print(f"3. Quit{Reset}")
+            choice = input(f"{Green}Select an option (1-3):{Magenta} ")
 
             if choice == '1':
                 create_new_puzzle(user)
@@ -297,13 +299,13 @@ with Session(engine) as session:
             elif choice == '2':
                 cell = Cell
                 display_user_puzzles(user, username)
-                puzzle_name = input("Enter puzzle to select: ")
+                puzzle_name = input(f"{Green}Enter puzzle to select:{Magenta} ")
                 puzzle = session.query(Puzzle).filter_by(name=puzzle_name).first()
                 if puzzle:
                     current_puzzle = puzzle
-                    print(f"Puzzle '{puzzle_name}' selected!")
+                    print(f"{Green}Puzzle '{Magenta}{puzzle_name}{Green}' selected!{Reset}")
                 else:
-                    print(f"Puzzle '{puzzle_name}' not found!")
+                    print(f"{Red}Puzzle '{Magenta}{puzzle_name}{Red}' not found!{Reset}")
 
             elif choice == '3':
                 break
