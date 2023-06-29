@@ -107,6 +107,7 @@ with Session(engine) as session:
                                         session.add(cell)
                                 session.commit()
                                 print("Crossword updated successfully!")
+                                
 
                             else:
                                 print("Invalid row or word length. Please try again.")
@@ -229,18 +230,18 @@ with Session(engine) as session:
 
             for cell in cells:
                 filled_cells.setdefault(cell.row, [' ' for _ in range(5)])
-                filled_cells[cell.row - 1][cell.column - 1] = str(cell.value)
+                filled_cells[cell.row][cell.column - 1] = str(cell.value)
 
             for clue in clues:
                 correct = True
                 if clue.direction == 'Across':
-                    row = filled_cells.get(clue.row)
+                    row = filled_cells.get(clue.number)
                     if row:
                         word = ''.join(row)
                         if word.lower() != clue.answer.lower():
                             correct = False
                 elif clue.direction == 'Down':
-                    column = [filled_cells.get(i, [' '])[clue.column - 1] for i in range(1, 6)]
+                    column = [filled_cells.get(i, [' '])[clue.number - 1] for i in range(1, 6)]
                     word = ''.join(column)
                     if word.lower() != clue.answer.lower():
                         correct = False
@@ -251,7 +252,6 @@ with Session(engine) as session:
                     print(f'{Red}{clue.number} {clue.direction}: Incorrect{Reset}')
         else:
             print("No puzzle selected. Please select a puzzle.")
-
 
 
 
